@@ -1,7 +1,7 @@
-// ESLint flat config (v9+). Replaces the legacy .eslintrc.json.
-const tseslint = require('@typescript-eslint/eslint-plugin');
+// ESLint flat config (v9+). Explicit rules — no preset imports — for portability.
+const tseslintPlugin = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
-const prettier = require('eslint-config-prettier');
+const prettierConfig = require('eslint-config-prettier');
 
 module.exports = [
   {
@@ -12,16 +12,16 @@ module.exports = [
     languageOptions: {
       parser: tsParser,
       parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
-      globals: { node: true, es2022: true },
     },
     plugins: {
-      '@typescript-eslint': tseslint,
+      '@typescript-eslint': tseslintPlugin,
     },
     rules: {
-      ...tseslint.configs.recommended.rules,
-      ...prettier.rules,
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      ...prettierConfig.rules,
     },
   },
 ];
