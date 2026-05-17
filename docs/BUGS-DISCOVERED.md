@@ -74,6 +74,21 @@ restful-booker is a deliberately imperfect API designed for QA practice. This do
 
 ---
 
+## BUG-007 · Type coercion: malformed primitives are accepted with 200 OK
+
+| Field | Value |
+| --- | --- |
+| Severity | High |
+| Endpoint | `POST /booking` |
+| Steps | Submit `{ ...validBooking, totalprice: "not-a-number" }` — or `depositpaid: "yes"` |
+| Expected | `400 Bad Request` with a field-level validation error |
+| Actual | `200 OK` with the booking created, the malformed value silently coerced |
+| Impact | Data integrity: invalid payloads bypass validation, polluting the dataset with non-numeric `totalprice` or stringified `depositpaid`. Downstream consumers expecting typed fields get runtime crashes. |
+| Discovered by | `tests/regression/booking-create.spec.ts` — the test asserts the API *should* reject these inputs. It is annotated with `test.fail()` so the suite stays green while explicitly documenting the bug; if the API ever fixes input validation, those tests start passing for real and the annotation must be removed. |
+| Recommendation | Validate the request body against a typed schema (JSON Schema or Joi) at the route boundary and reject with a structured 400 error envelope. |
+
+---
+
 ## BUG-006 · Inconsistent `additionalneeds` handling
 
 | Field | Value |

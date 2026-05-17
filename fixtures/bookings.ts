@@ -17,11 +17,8 @@ export function makeBooking(overrides: Partial<BookingPayload> = {}): BookingPay
 }
 
 /**
- * Negative-test payloads. `case` describes the scenario, `payload` is the
- * intentionally-bad body, `expectStatus` documents what we expect from the API.
- *
- * Note: restful-booker is permissive with malformed input — many of these
- * still return 200 instead of 4xx. See docs/BUGS-DISCOVERED.md.
+ * Negative-test payloads the API *correctly* rejects.
+ * These should always return a 4xx/5xx response.
  */
 export const INVALID_PAYLOADS: Array<{
   case: string;
@@ -43,21 +40,24 @@ export const INVALID_PAYLOADS: Array<{
     payload: {},
     expectStatus: [400, 500],
   },
+];
+
+/**
+ * Payloads the API *should* reject but currently accepts with a 200 OK.
+ * Tracked as BUG-007 in docs/BUGS-DISCOVERED.md. Tests use `test.fail()`
+ * so a future fix surfaces immediately as a regression-of-the-bug-fix.
+ */
+export const PERMISSIVELY_ACCEPTED_PAYLOADS: Array<{
+  case: string;
+  payload: unknown;
+}> = [
   {
-    case: 'totalprice as string',
-    payload: {
-      ...VALID_BOOKING,
-      totalprice: 'not-a-number',
-    },
-    expectStatus: [400, 500],
+    case: 'totalprice as string (should be rejected, currently coerced)',
+    payload: { ...VALID_BOOKING, totalprice: 'not-a-number' },
   },
   {
-    case: 'depositpaid as string',
-    payload: {
-      ...VALID_BOOKING,
-      depositpaid: 'yes',
-    },
-    expectStatus: [400, 500],
+    case: 'depositpaid as string (should be rejected, currently coerced)',
+    payload: { ...VALID_BOOKING, depositpaid: 'yes' },
   },
 ];
 

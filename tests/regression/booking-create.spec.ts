@@ -1,5 +1,10 @@
 import { test, expect } from '../../fixtures/test-fixtures';
-import { INVALID_PAYLOADS, VALID_BOOKING, makeBooking } from '../../fixtures/bookings';
+import {
+  INVALID_PAYLOADS,
+  PERMISSIVELY_ACCEPTED_PAYLOADS,
+  VALID_BOOKING,
+  makeBooking,
+} from '../../fixtures/bookings';
 import { bookingCreatedSchema } from '../../schemas/booking.schema';
 import { expectMatchesSchema } from '../../schemas/validator';
 
@@ -32,19 +37,30 @@ test.describe('POST /booking — happy paths @regression', () => {
 });
 
 test.describe('POST /booking — input validation @regression', () => {
-  // restful-booker is famously permissive — these tests document the *actual*
-  // behavior (often a 500) rather than asserting an idealized 400. The point
-  // is to catch any regression where the API silently starts accepting
-  // malformed input as valid.
   for (const { case: scenario, payload, expectStatus } of INVALID_PAYLOADS) {
     test(`rejects: ${scenario}`, async ({ request }) => {
       const response = await request.post('/booking', { data: payload });
       expect(
         expectStatus,
-        `expected one of ${expectStatus.join(', ')} but got ${response.status()} — ` +
-          `if this is now a 200, restful-booker's input validation changed. ` +
-          `Document in BUGS-DISCOVERED.md.`,
+        `expected one of ${expectStatus.join(', ')} but got ${response.status()}. ` +
+          `If this is now a 200, restful-booker's input validation changed — document in BUGS-DISCOVERED.md.`,
       ).toContain(response.status());
+    });
+  }
+
+  // These payloads SHOULD be rejected but the API currently accepts them with a 200
+  // due to JavaScript-style type coercion. Tracked as BUG-007 in BUGS-DISCOVERED.md.
+  //
+  // `test.fail()` marks these as expected-to-fail: if the API ever fixes the bug
+  // and starts returning a 4xx, the test will fail loudly to surface the change.
+  for (const { case: scenario, payload } of PERMISSIVELY_ACCEPTED_PAYLOADS) {
+    test(`should reject but currently accepts: ${scenario}`, async ({ request }) => {
+      test.fail(
+        true,
+        'Known bug — API currently accepts malformed input with a 200 OK. See BUGS-DISCOVERED.md (BUG-007).',
+      );
+      const response = await request.post('/booking', { data: payload });
+      expect([400, 422, 500]).toContain(response.status());
     });
   }
 });
